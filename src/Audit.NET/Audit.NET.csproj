@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>An extensible framework to audit executing operations in .NET and .NET Core.</Description>
+    <Description>An epitop fork of the extensible framework to audit executing operations in .NET and .NET Core.</Description>
     <Copyright>Copyright 2016</Copyright>
     <AssemblyTitle>Audit.NET</AssemblyTitle>
-    <Authors>Federico Colombo</Authors>
+    <Authors>Federico Colombo, Epitop</Authors>
     <TargetFrameworks>netstandard1.3;netstandard2.0;netstandard2.1;net45;net461;net5.0;net6.0;net7.0</TargetFrameworks>
     <DefineConstants>$(DefineConstants);STRONG_NAME</DefineConstants>
     <NoWarn>$(NoWarn);1591</NoWarn>
@@ -15,13 +15,13 @@
     <PackageId>Audit.NET</PackageId>
     <PackageTags>Audit;Trail;Log</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageProjectUrl>https://github.com/thepirat000/Audit.NET</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/epitop/Audit.NET.Epitop</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.3' ">1.6.1</NetStandardImplicitPackageVersion>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-	<RepositoryUrl>https://github.com/thepirat000/Audit.NET</RepositoryUrl>
+	<RepositoryUrl>https://github.com/epitop/Audit.NET.Epitop</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>Store Audit.NET Trail Logs into a SQL Server database</Description>
+    <Description>An epitop fork of the Store Audit.NET Trail Logs into a SQL Server database</Description>
     <Copyright>Copyright 2016</Copyright>
     <AssemblyTitle>Audit.SqlServer</AssemblyTitle>
-    <Authors>Federico Colombo</Authors>
+    <Authors>Federico Colombo, Epitop</Authors>
     <TargetFrameworks>netstandard2.1;netstandard2.0;netstandard1.3;net45;net462;net5.0;net6.0;net7.0</TargetFrameworks>
     <DefineConstants>$(DefineConstants);STRONG_NAME</DefineConstants>
     <NoWarn>$(NoWarn);1591</NoWarn>
@@ -16,14 +16,14 @@
     <PackageId>Audit.NET.SqlServer</PackageId>
     <PackageTags>Audit;Trail;Log;SQL;SqlServer</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageProjectUrl>https://github.com/thepirat000/Audit.NET</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/epitop/Audit.NET.Epitop</PackageProjectUrl>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.3' ">1.6.1</NetStandardImplicitPackageVersion>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard2.0' ">2.0.3</NetStandardImplicitPackageVersion>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-	<RepositoryUrl>https://github.com/thepirat000/Audit.NET</RepositoryUrl>
+	<RepositoryUrl>https://github.com/epitop/Audit.NET.Epitop</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
