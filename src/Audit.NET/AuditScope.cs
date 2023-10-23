@@ -66,7 +66,7 @@ namespace Audit.Core
                 var targetValue = options.TargetGetter.Invoke();
                 _event.Target = new AuditTarget
                 {
-                    Old = _dataProvider.Serialize(targetValue),
+                    EventObject = _dataProvider.Serialize(targetValue),
                     Type = targetValue?.GetType().GetFullTypeName() ?? "Object"
                 };
             }
@@ -222,7 +222,7 @@ namespace Audit.Core
                 var targetValue = targetGetter.Invoke();
                 _event.Target = new AuditTarget
                 {
-                    Old = _dataProvider.Serialize(targetValue),
+                    EventObject = _dataProvider.Serialize(targetValue),
                     Type = targetValue?.GetType().GetFullTypeName() ?? "Object"
                 };
             }
@@ -392,7 +392,7 @@ namespace Audit.Core
             _event.Duration = Convert.ToInt32((_event.EndDate.Value - _event.StartDate).TotalMilliseconds);
             if (_targetGetter != null)
             {
-                _event.Target.New = _dataProvider.Serialize(_targetGetter.Invoke());
+                _event.Target.EventObject = _dataProvider.Serialize(_targetGetter.Invoke());
             }
         }
 
