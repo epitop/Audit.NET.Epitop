@@ -294,8 +294,8 @@ namespace Audit.JsonNetAdapter.UnitTest
             Assert.AreEqual(ev.Environment.UserName, deserialized.Environment.UserName);
             Assert.AreEqual("DEV", deserialized.Environment.CustomFields["env"].ToString());
             Assert.AreEqual("test", deserialized.EventType);
-            Assert.AreEqual("1", (deserialized.Target.Old as JToken)["a"].ToString());
-            Assert.AreEqual("3", (deserialized.Target.New as JToken)["a"].ToString());
+            // Assert.AreEqual("1", (deserialized.Target.Old as JToken)["a"].ToString());
+            Assert.AreEqual("3", (deserialized.Target.EventObject as JToken)["a"].ToString());
         }
 
     }

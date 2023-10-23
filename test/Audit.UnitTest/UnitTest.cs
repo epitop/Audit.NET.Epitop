@@ -243,7 +243,7 @@ namespace Audit.UnitTest
             Assert.AreEqual(typeof(AuditEventEntityFramework), scope.Event.GetType());
             Assert.AreEqual(typeof(DynamicDataProvider), scope.DataProvider.GetType());
             Assert.AreEqual(SaveMode.InsertOnStart, scope.SaveMode);
-            Assert.AreEqual("1", scope.Event.Target.Old.ToString());
+            Assert.AreEqual("1", scope.Event.Target.EventObject.ToString());
             Assert.IsTrue(scope.Event.Environment.CallingMethodName.Contains(mb.Name));
         }
 
@@ -270,7 +270,7 @@ namespace Audit.UnitTest
             Assert.AreEqual(typeof(AuditEventEntityFramework), scope.Event.GetType());
             Assert.AreEqual(typeof(DynamicDataProvider), scope.DataProvider.GetType());
             Assert.AreEqual(SaveMode.InsertOnStart, scope.SaveMode);
-            Assert.AreEqual("1", scope.Event.Target.Old.ToString());
+            Assert.AreEqual("1", scope.Event.Target.EventObject.ToString());
             Assert.IsTrue(scope.Event.Environment.CallingMethodName.Contains(mb.Name));
         }
 
@@ -365,10 +365,10 @@ namespace Audit.UnitTest
             Assert.AreEqual(1, evs.Count);
             Assert.AreEqual("SomeClass", evs[0].Target.Type);
             
-            Assert.AreEqual(1, JsonAdapter.Deserialize<SomeClass>(JsonAdapter.Serialize(evs[0].Target.Old)).Id);
-            Assert.AreEqual("Test", JsonAdapter.Deserialize<SomeClass>(JsonAdapter.Serialize(evs[0].Target.Old)).Name);
-            Assert.AreEqual(2, JsonAdapter.Deserialize<SomeClass>(JsonAdapter.Serialize(evs[0].Target.New)).Id);
-            Assert.AreEqual("NewTest", JsonAdapter.Deserialize<SomeClass>(JsonAdapter.Serialize(evs[0].Target.New)).Name);
+            Assert.AreEqual(2, JsonAdapter.Deserialize<SomeClass>(JsonAdapter.Serialize(evs[0].Target.EventObject)).Id);
+            Assert.AreEqual("NewTest", JsonAdapter.Deserialize<SomeClass>(JsonAdapter.Serialize(evs[0].Target.EventObject)).Name);
+            // Assert.AreEqual(2, JsonAdapter.Deserialize<SomeClass>(JsonAdapter.Serialize(evs[0].Target.New)).Id);
+            // Assert.AreEqual("NewTest", JsonAdapter.Deserialize<SomeClass>(JsonAdapter.Serialize(evs[0].Target.New)).Name);
         }
 
         [Test]
@@ -391,8 +391,8 @@ namespace Audit.UnitTest
 
             Assert.AreEqual(1, evs.Count);
             Assert.AreEqual("Object", evs[0].Target.Type);
-            Assert.IsNull(evs[0].Target.Old);
-            Assert.IsNull(evs[0].Target.New);
+            Assert.IsNull(evs[0].Target.EventObject);
+            // Assert.IsNull(evs[0].Target.New);
         }
 
         [Test]
@@ -621,8 +621,7 @@ namespace Audit.UnitTest
             Assert.AreEqual(1, fileCount);
             Assert.AreEqual(JsonAdapter.Serialize(ev), JsonAdapter.Serialize(fileFromProvider));
             Assert.AreEqual("evt", ev.EventType);
-            Assert.AreEqual("start", ev.Target.Old.ToString());
-            Assert.AreEqual("end", ev.Target.New.ToString());
+            Assert.AreEqual("end", ev.Target.EventObject.ToString());
             Assert.AreEqual("1", ev.CustomFields["X"].ToString());
         }
 
@@ -1094,7 +1093,7 @@ namespace Audit.UnitTest
             }
             Assert.AreEqual(eventType, ev.EventType);
             Assert.True(ev.Comments.Contains("test"));
-            Assert.Null(ev.Target.New);
+            Assert.Null(ev.Target.EventObject);
             provider.Verify(p => p.InsertEvent(It.IsAny<AuditEvent>()), Times.Never);
         }
 

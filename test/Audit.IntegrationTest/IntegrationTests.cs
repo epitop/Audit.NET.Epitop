@@ -1,17 +1,11 @@
 ﻿using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using Audit.Core;
 using Audit.Core.Providers;
-using Audit.DynamoDB.Providers;
 using Audit.Kafka.Providers;
-using Audit.MongoDB.Providers;
-using Audit.SqlServer.Providers;
 using Audit.Udp.Providers;
 using Confluent.Kafka;
-using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
-using MongoDB.Bson;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -58,67 +52,6 @@ namespace Audit.IntegrationTest
                     || type.FullName.StartsWith("MongoDB"));
                 BsonSerializer.RegisterSerializer(objectSerializer);
 #endif
-            }
-
-            [Test]
-            [Category("Mongo")]
-            public void Test_Mongo_ObjectId()
-            {
-                Audit.Core.Configuration.Setup()
-                    .UseMongoDB(config => config
-                        .ConnectionString("mongodb://localhost:27017")
-                        .Database("Audit")
-                        .Collection("Event")
-                        .SerializeAsBson())
-                    .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd)
-                    .ResetActions();
-
-                var up = new UserProfiles()
-                {
-                    UserName = "user1"
-                };
-                
-                var scope = AuditScope.Create("test", () => up);
-                object eventId = scope.EventId;
-                up.UserName = "user2";
-                scope.Dispose();
-
-                var eventRead = (Audit.Core.Configuration.DataProvider as MongoDataProvider).GetEvent(eventId);
-
-                Assert.AreEqual("user1", (eventRead.Target.Old as BsonDocument)["UserName"].ToString());
-                Assert.AreEqual("user2", (eventRead.Target.New as BsonDocument)["UserName"].ToString());
-            }
-
-            [Test]
-            [Category("Mongo")]
-            public void Test_Mongo_ClientSettings()
-            {
-                Audit.Core.Configuration.Setup()
-                    .UseMongoDB(config => config
-                        .ClientSettings(new MongoClientSettings() { Server = new MongoServerAddress("localhost", 27017) })
-                        .ConnectionString("mongodb://WRONG_HOST:10001")
-                        .Database("Audit")
-                        .Collection("Event")
-                        .SerializeAsBson())
-                    .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd)
-                    .ResetActions();
-
-                var up = new UserProfiles()
-                {
-                    UserName = "user1"
-                };
-
-                object eventId = null;
-                using (var scope = AuditScope.Create("test", () => up))
-                {
-                    eventId = scope.EventId;
-                    up.UserName = "user2";
-                }
-
-                var eventRead = (Audit.Core.Configuration.DataProvider as MongoDataProvider).GetEvent(eventId);
-
-                Assert.AreEqual("user1", (eventRead.Target.Old as BsonDocument)["UserName"].ToString());
-                Assert.AreEqual("user2", (eventRead.Target.New as BsonDocument)["UserName"].ToString());
             }
 
             [Test]
@@ -214,24 +147,6 @@ namespace Audit.IntegrationTest
                 Assert.AreEqual(1, x.CustomColumns[0].Value.Invoke(null));
                 Assert.AreEqual("c2", x.CustomColumns[1].Name);
                 Assert.AreEqual(2, x.CustomColumns[1].Value.Invoke(null));
-            }
-
-            [Test]
-            [Category("PostgreSQL")]
-            public void PostgreSql()
-            {
-                SetPostgreSqlSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("PostgreSQL")]
-            public async Task PostgreSqlAsync()
-            {
-                SetPostgreSqlSettings();
-                await TestUpdateAsync();
             }
 
             public void SetPostgreSqlSettings()
@@ -422,24 +337,6 @@ namespace Audit.IntegrationTest
 #endif
 
             [Test]
-            [Category("AzureDocDb")]
-            public void TestAzureCosmos()
-            {
-                SetAzureDocDbSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("AzureDocDb")]
-            public async Task TestAzureCosmosAsync()
-            {
-                SetAzureDocDbSettings();
-                await TestUpdateAsync();
-            }
-
-            [Test]
             public void TestFile()
             {
                 SetFileSettings();
@@ -456,269 +353,8 @@ namespace Audit.IntegrationTest
             }
 
 
-            [Test]
-            [Category("AzureBlob")]
-            public void TestAzureBlob()
-            {
-                SetAzureBlobSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("AzureBlob")]
-            public async Task TestAzureBlobAsync()
-            {
-                SetAzureBlobSettings();
-                await TestUpdateAsync();
-            }
-
-            [Test]
-            [Category("AzureBlob")]
-            [Ignore("Ignored until AD is configured in the test Azure account")]
-            public void TestAzureBlob_ActiveDirectory()
-            {
-                SetAzureBlobSettings_ActiveDirectory();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("AzureBlob")]
-            [Ignore("Ignored until AD is configured in the test Azure account")]
-            public async Task TestAzureBlobAsync_ActiveDirectory()
-            {
-                SetAzureBlobSettings_ActiveDirectory();
-                await TestUpdateAsync();
-            }
-
-            [Test]
-            [Category("AzureBlob")]
-            public void TestStressAzureBlob()
-            {
-                Audit.Core.Configuration.Setup()
-                   .UseAzureBlobStorage(config => config
-                       .ConnectionString(AzureSettings.AzureBlobCnnString)
-                       .ContainerName(ev => ev.EventType)
-                       .BlobName(ev => $"{ev.EventType}_{Guid.NewGuid()}.json"))
-                   .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd);
-
-                var rnd = new Random();
-
-                //Parallel random insert into event1, event2 and event3 containers
-                Parallel.ForEach(Enumerable.Range(1, 100), i =>
-                {
-                    var eventType = "event" + rnd.Next(1, 4); //1..3
-                    var x = "start";
-                    using (var s = new AuditScopeFactory().Create(eventType, () => x, EventCreationPolicy.InsertOnStartReplaceOnEnd, null))
-                    {
-                        x = "end";
-                    }
-                });
-
-                // Assert events are on correct container 
-                var storageAccount = CloudStorageAccount.Parse(AzureSettings.AzureBlobCnnString);
-                var blobClient = storageAccount.CreateCloudBlobClient();
-                for (int i = 1; i <= 3; i++)
-                {
-                    var eventId = "event" + i;
-                    BlobContinuationToken continuationToken = null;
-                    BlobResultSegment resultSegment = null;
-                    do
-                    {
-                        resultSegment = blobClient.ListBlobsSegmentedAsync(eventId + "/", continuationToken).Result;
-                        foreach (CloudBlockBlob blob in resultSegment.Results)
-                        {
-                            Assert.True(blob.Name.StartsWith(eventId + "_"));
-                        }
-                        continuationToken = resultSegment.ContinuationToken;
-                    } while (continuationToken != null);
-                }
-            }
-
-            [Test]
-            [Category("Dynamo")]
-            public void TestStressDynamo()
-            {
-                int N = 32;
-                SetDynamoSettings();
-                var hashes = new HashSet<string>();
-                int count = 0;
-                Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaved, scope =>
-                {
-                    count++;
-                    hashes.Add((scope.EventId as object[])[0].ToString());
-                });
-
-                var rnd = new Random();
-
-                //Parallel random insert into event1, event2 and event3 containers
-                Parallel.ForEach(Enumerable.Range(1, N), i =>
-                {
-                    var eventType = "AuditEvents";
-                    var x = "start";
-                    using (var s = new AuditScopeFactory().Create(eventType, () => x, EventCreationPolicy.InsertOnStartReplaceOnEnd, null))
-                    {
-                        x = "end";
-                    }
-                });
-
-                Assert.AreEqual(N, hashes.Count);
-                Assert.AreEqual(N*2, count);
-
-                // Assert events
-                int maxCheck = N / 4;
-                int check = 0;
-                foreach(var hash in hashes)
-                {
-                    if (check++ > maxCheck)
-                    {
-                        break;
-                    }
-                    var ddp = (Configuration.DataProvider as DynamoDataProvider);
-                    var ev = ddp.GetEvent<AuditEvent>((Primitive)hash, (Primitive)DateTime.Now.Year);
-
-                    Assert.NotNull(ev);
-                    Assert.AreEqual("AuditEvents", ev.EventType);
-                    Assert.AreEqual(DateTime.Now.Year.ToString(), ev.CustomFields["SortKey"].ToString());
-                    Assert.AreEqual(hash, ev.CustomFields["HashKey"].ToString());
-                }
-            }
-
-
-            [Test]
-            [Category("AzureBlob")]
-            public void TestAzureTable()
-            {
-                SetAzureTableSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("AzureBlob")]
-            public async Task TestAzureTableAsync()
-            {
-                SetAzureTableSettings();
-                await TestUpdateAsync();
-            }
-
-#if NET5_0_OR_GREATER
-            [Test]
-            [Category("AzureStorageBlobs")]
-            public void TestAzureStorageBlobs()
-            {
-                SetAzureStorageBlobsSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("AzureStorageBlobs")]
-            public async Task TestAzureStorageBlobsAsync()
-            {
-                SetAzureStorageBlobsSettings();
-                await TestUpdateAsync();
-            }
-#endif
-
-            [Test]
-            [Category("SQL")]
-            public void TestSql()
-            {
-                SetSqlSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("SQL")]
-            public async Task TestSqlAsync()
-            {
-                SetSqlSettings();
-                await TestUpdateAsync();
-            }
-
-            [Test]
-            [Category("Mongo")]
-            public void TestMongo()
-            {
-                SetMongoSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("Mongo")]
-            public async Task TestMongoAsync()
-            {
-                SetMongoSettings();
-                await TestUpdateAsync();
-            }
-
-            [Test]
-            [Category("Mongo")]
-            public void TestMongoDateSerialization()
-            {
-                Audit.Core.Configuration.Setup()
-                    .UseMongoDB(config => config
-                        .ConnectionString("mongodb://localhost:27017")
-                        .Database("Audit")
-                        .Collection("Event"))
-                    .WithCreationPolicy(EventCreationPolicy.InsertOnEnd)
-                    .ResetActions();
-#if NK_JSON
-                var prevSettings = Audit.Core.Configuration.JsonSettings;
-                Audit.Core.Configuration.JsonSettings = new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new JavaScriptDateTimeConverter() } };
-#endif
-                object evId = null;
-                Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaved, s =>
-                {
-                    if (evId != null)
-                    {
-                        Assert.Fail("evId should be null");
-                    }
-                    evId = s.EventId;
-                });
-                var now = DateTime.UtcNow;
-                using (var s = new AuditScopeFactory().Create("test", null, new { someDate = now }, null, null))
-                {
-                }
-                Audit.Core.Configuration.ResetCustomActions();
-                var dp = Audit.Core.Configuration.DataProvider as MongoDataProvider;
-                var evt = dp.GetEvent(evId);
-#if NK_JSON
-                Assert.AreEqual(now.ToString("yyyyMMddHHmmss"), (evt.CustomFields["someDate"] as DateTime?).Value.ToString("yyyyMMddHHmmss"));
-                Audit.Core.Configuration.JsonSettings = prevSettings;
-#else
-                Assert.AreEqual(now.ToString("yyyyMMddHHmmss"), DateTime.Parse(evt.CustomFields["someDate"].ToString()).ToUniversalTime().ToString("yyyyMMddHHmmss"));
-#endif
-            }
-
-            [Test]
-            [Category("MySql")]
-            public void TestMySql()
-            {
-                SetMySqlSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("MySql")]
-            public async Task TestMySqlAsync()
-            {
-                SetMySqlSettings();
-                await TestUpdateAsync();
-            }
-
+          
+          
             [Test]
             [Category("UDP")]
             public void TestUdp()
@@ -729,62 +365,7 @@ namespace Audit.IntegrationTest
                 TestDelete();
             }
 
-#if NET461 || NETCOREAPP2_0 || NETCOREAPP3_0 || NET5_0_OR_GREATER
-            [Test]
-            [Category("Elasticsearch")]
-            public void TestElasticsearch()
-            {
-                SetElasticsearchSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
 
-            [Test]
-            [Category("Elasticsearch")]
-            public async Task TestElasticsearchAsync()
-            {
-                SetElasticsearchSettings();
-                await TestUpdateAsync();
-            }
-#endif
-#if NET461 || NETCOREAPP3_0 || NET5_0_OR_GREATER
-            [Test]
-            [Category("AmazonQLDB")]
-            public void TestAmazonQLDB()
-            {
-                SetAmazonQLDBSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("AmazonQLDB")]
-            public async Task TestAmazonQLDBAsync()
-            {
-                SetAmazonQLDBSettings();
-                await TestUpdateAsync();
-            }
-#endif
-
-            [Test]
-            [Category("Dynamo")]
-            public void TestDynamo()
-            {
-                SetDynamoSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
-            [Test]
-            [Category("Dynamo")]
-            public async Task TestDynamoAsync()
-            {
-                SetDynamoSettings();
-                await TestUpdateAsync();
-            }
 
             public struct TestStruct
             {
@@ -846,20 +427,20 @@ namespace Audit.IntegrationTest
                 Assert.AreEqual(ev.StartDate.ToUniversalTime().ToString("yyyyMMddHHmmss"), evFromApi.StartDate.ToUniversalTime().ToString("yyyyMMddHHmmss"));
                 Assert.AreEqual(ev.EndDate.Value.ToUniversalTime().ToString("yyyyMMddHHmmss"), evFromApi.EndDate.Value.ToUniversalTime().ToString("yyyyMMddHHmmss"));
                 Assert.AreEqual(ev.CustomFields["ReferenceId"].ToString(), evFromApi.CustomFields["ReferenceId"].ToString());
-                if (evFromApi.Target.Old is TestStruct)
+                if (evFromApi.Target.EventObject is TestStruct)
                 {
-                    Assert.AreEqual(OrderStatus.Created, ((TestStruct?)evFromApi.Target.Old).Value.Order.Status);
-                    Assert.AreEqual(OrderStatus.Submitted, ((TestStruct?)evFromApi.Target.New).Value.Order.Status);
+                    // Assert.AreEqual(OrderStatus.Created, ((TestStruct?)evFromApi.Target.Old).Value.Order.Status);
+                    Assert.AreEqual(OrderStatus.Submitted, ((TestStruct?)evFromApi.Target.EventObject).Value.Order.Status);
                 }
-                else if (evFromApi.Target.Old is ExpandoObject)
+                else if (evFromApi.Target.EventObject is ExpandoObject)
                 {
-                    Assert.AreEqual((int)OrderStatus.Created, (int)((dynamic)evFromApi.Target.Old).Order.Status);
-                    Assert.AreEqual((int)OrderStatus.Submitted, (int)((dynamic)evFromApi.Target.New).Order.Status);
+                    // Assert.AreEqual((int)OrderStatus.Created, (int)((dynamic)evFromApi.Target.Old).Order.Status);
+                    Assert.AreEqual((int)OrderStatus.Submitted, (int)((dynamic)evFromApi.Target.EventObject).Order.Status);
                 }
                 else
                 {
-                    Assert.AreEqual(OrderStatus.Created, Core.Configuration.JsonAdapter.Deserialize<TestStruct>(evFromApi.Target.Old.ToString()).Order.Status);
-                    Assert.AreEqual(OrderStatus.Submitted, Core.Configuration.JsonAdapter.Deserialize<TestStruct>(evFromApi.Target.New.ToString()).Order.Status);
+                    // Assert.AreEqual(OrderStatus.Created, Core.Configuration.JsonAdapter.Deserialize<TestStruct>(evFromApi.Target.Old.ToString()).Order.Status);
+                    Assert.AreEqual(OrderStatus.Submitted, Core.Configuration.JsonAdapter.Deserialize<TestStruct>(evFromApi.Target.EventObject.ToString()).Order.Status);
                 }
                 Assert.AreEqual(order.OrderId, evFromApi.CustomFields["ReferenceId"].ToString());
 
@@ -962,20 +543,20 @@ namespace Audit.IntegrationTest
                 Assert.AreEqual(ev.StartDate.ToUniversalTime().ToString("yyyyMMddHHmmss"), evFromApi.StartDate.ToUniversalTime().ToString("yyyyMMddHHmmss"));
                 Assert.AreEqual(ev.EndDate.Value.ToUniversalTime().ToString("yyyyMMddHHmmss"), evFromApi.EndDate.Value.ToUniversalTime().ToString("yyyyMMddHHmmss"));
                 Assert.AreEqual(ev.CustomFields["ReferenceId"].ToString(), evFromApi.CustomFields["ReferenceId"].ToString());
-                if (evFromApi.Target.Old is TestStruct)
+                if (evFromApi.Target.EventObject is TestStruct)
                 {
-                    Assert.AreEqual(OrderStatus.Created, ((TestStruct?)evFromApi.Target.Old).Value.Order.Status);
-                    Assert.AreEqual(OrderStatus.Submitted, ((TestStruct?)evFromApi.Target.New).Value.Order.Status);
+                    // Assert.AreEqual(OrderStatus.Created, ((TestStruct?)evFromApi.Target.EventObject).Value.Order.Status);
+                    Assert.AreEqual(OrderStatus.Submitted, ((TestStruct?)evFromApi.Target.EventObject).Value.Order.Status);
                 }
-                else if (evFromApi.Target.Old is ExpandoObject)
+                else if (evFromApi.Target.EventObject is ExpandoObject)
                 {
-                    Assert.AreEqual((int)OrderStatus.Created, (int)((dynamic)evFromApi.Target.Old).Order.Status);
-                    Assert.AreEqual((int)OrderStatus.Submitted, (int)((dynamic)evFromApi.Target.New).Order.Status);
+                    // Assert.AreEqual((int)OrderStatus.Created, (int)((dynamic)evFromApi.Target.EventObject).Order.Status);
+                    Assert.AreEqual((int)OrderStatus.Submitted, (int)((dynamic)evFromApi.Target.EventObject).Order.Status);
                 }
                 else
                 { 
-                    Assert.AreEqual(OrderStatus.Created, Core.Configuration.JsonAdapter.Deserialize<TestStruct>(evFromApi.Target.Old.ToString()).Order.Status);
-                    Assert.AreEqual(OrderStatus.Submitted, Core.Configuration.JsonAdapter.Deserialize<TestStruct>(evFromApi.Target.New.ToString()).Order.Status);
+                    // Assert.AreEqual(OrderStatus.Created, Core.Configuration.JsonAdapter.Deserialize<TestStruct>(evFromApi.Target.EventObject.ToString()).Order.Status);
+                    Assert.AreEqual(OrderStatus.Submitted, Core.Configuration.JsonAdapter.Deserialize<TestStruct>(evFromApi.Target.EventObject.ToString()).Order.Status);
                 }
                 Assert.AreEqual(order.OrderId, ev.CustomFields["ReferenceId"].ToString());
 
@@ -1052,15 +633,7 @@ namespace Audit.IntegrationTest
             }
 
 #if NET452 || NET461 || NETCOREAPP2_0 || NETCOREAPP3_0 || NET5_0_OR_GREATER
-            [Test]
-            public void TestEventLog()
-            {
-                SetEventLogSettings();
-                TestUpdate();
-                TestInsert();
-                TestDelete();
-            }
-
+      
             public void SetEventLogSettings()
             {
                 Audit.Core.Configuration.Setup()

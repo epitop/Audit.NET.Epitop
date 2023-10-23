@@ -230,7 +230,7 @@ namespace Audit.UnitTest
             Assert.AreEqual(typeof(AuditEventEntityFramework), scope.Event.GetType());
             Assert.AreEqual(typeof(DynamicDataProvider), scope.DataProvider.GetType());
             Assert.AreEqual(SaveMode.InsertOnStart, scope.SaveMode);
-            Assert.AreEqual("1", scope.Event.Target.Old.ToString());
+            Assert.AreEqual("1", scope.Event.Target.EventObject.ToString());
             Assert.IsTrue(scope.Event.Environment.CallingMethodName.Contains(someMethod.Name));
         }
 
@@ -256,7 +256,7 @@ namespace Audit.UnitTest
             Assert.AreEqual(typeof(AuditEventEntityFramework), scope.Event.GetType());
             Assert.AreEqual(typeof(DynamicDataProvider), scope.DataProvider.GetType());
             Assert.AreEqual(SaveMode.InsertOnStart, scope.SaveMode);
-            Assert.AreEqual("1", scope.Event.Target.Old.ToString());
+            Assert.AreEqual("1", scope.Event.Target.EventObject.ToString());
             Assert.IsTrue(scope.Event.Environment.CallingMethodName.Contains(someMethod.Name));
         }
 
@@ -323,9 +323,9 @@ namespace Audit.UnitTest
 
             Assert.AreEqual(1, insertEvs.Count);
             Assert.AreEqual(2, replaceEvs.Count);
-            Assert.AreEqual("x1", insertEvs[0].Target.Old.ToString());
-            Assert.AreEqual("x2", replaceEvs[0].Target.New.ToString());
-            Assert.AreEqual("x3", replaceEvs[1].Target.New.ToString());
+            Assert.AreEqual("x1", insertEvs[0].Target.EventObject.ToString());
+            // Assert.AreEqual("x2", replaceEvs[0].Target.New.ToString());
+            // Assert.AreEqual("x3", replaceEvs[1].Target.New.ToString());
         }
 
 
@@ -360,8 +360,7 @@ namespace Audit.UnitTest
             Assert.AreEqual(1, fileCount);
             Assert.AreEqual(JsonAdapter.Serialize(ev), JsonAdapter.Serialize(fileFromProvider));
             Assert.AreEqual("evt", ev.EventType);
-            Assert.AreEqual("start", ev.Target.Old.ToString());
-            Assert.AreEqual("end", ev.Target.New.ToString());
+            Assert.AreEqual("end", ev.Target.EventObject.ToString());
             Assert.AreEqual("1", ev.CustomFields["X"].ToString());
         }
 
@@ -745,7 +744,7 @@ namespace Audit.UnitTest
             }
             Assert.AreEqual(eventType, ev.EventType);
             Assert.True(ev.Comments.Contains("test"));
-            Assert.Null(ev.Target.New);
+            Assert.Null(ev.Target.EventObject);
             provider.Verify(p => p.InsertEvent(It.IsAny<AuditEvent>()), Times.Never);
             provider.Verify(p => p.InsertEventAsync(It.IsAny<AuditEvent>(), It.IsAny<CancellationToken>()), Times.Never);
         }

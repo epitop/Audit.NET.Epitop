@@ -55,10 +55,10 @@ namespace Audit.IntegrationTest
             ela.Client.Indices.Refresh(indexName);
 
             var evLoad = ela.GetEvent(new ElasticsearchAuditEventId() { Id = guids[0], Index = indexName });
-            var orderOldValue = Configuration.JsonAdapter.Deserialize<Order>(repl[0].Target.Old.ToString());
-            var orderNewValue = Configuration.JsonAdapter.Deserialize<Order>(repl[0].Target.New.ToString());
-            var oldDictionary = evLoad.Target.Old as Dictionary<string, object>;
-            var newDictionary = evLoad.Target.New as Dictionary<string, object>;
+            var orderOldValue = Configuration.JsonAdapter.Deserialize<Order>(repl[0].Target.EventObject.ToString());
+            var orderNewValue = Configuration.JsonAdapter.Deserialize<Order>(repl[0].Target.EventObject.ToString());
+            var oldDictionary = evLoad.Target.EventObject as Dictionary<string, object>;
+            var newDictionary = evLoad.Target.EventObject as Dictionary<string, object>;
 
             Assert.IsNotNull(evLoad);
             Assert.IsNotNull(oldDictionary);
@@ -71,7 +71,7 @@ namespace Audit.IntegrationTest
             Assert.AreEqual("Updated", orderNewValue.Status);
             Assert.AreEqual("Updated", newDictionary["status"].ToString());
             Assert.AreEqual("value", evLoad.CustomFields["MyCustomField"]);
-            Assert.AreEqual(null, ins[0].Target.New);
+            Assert.AreEqual(null, ins[0].Target.EventObject);
         }
 
         [Test]
@@ -106,10 +106,10 @@ namespace Audit.IntegrationTest
             await ela.Client.Indices.RefreshAsync(indexName);
 
             var evLoad = await ela.GetEventAsync(new ElasticsearchAuditEventId() { Id = guids[0], Index = indexName });
-            var orderOldValue = Configuration.JsonAdapter.Deserialize<Order>(repl[0].Target.Old.ToString());
-            var orderNewValue = Configuration.JsonAdapter.Deserialize<Order>(repl[0].Target.New.ToString());
-            var oldDictionary = evLoad.Target.Old as Dictionary<string, object>;
-            var newDictionary = evLoad.Target.New as Dictionary<string, object>;
+            var orderOldValue = Configuration.JsonAdapter.Deserialize<Order>(repl[0].Target.EventObject.ToString());
+            var orderNewValue = Configuration.JsonAdapter.Deserialize<Order>(repl[0].Target.EventObject.ToString());
+            var oldDictionary = evLoad.Target.EventObject as Dictionary<string, object>;
+            var newDictionary = evLoad.Target.EventObject as Dictionary<string, object>;
 
             Assert.IsNotNull(evLoad);
             Assert.IsNotNull(oldDictionary);
@@ -122,7 +122,7 @@ namespace Audit.IntegrationTest
             Assert.AreEqual("Updated", orderNewValue.Status);
             Assert.AreEqual("Updated", newDictionary["status"].ToString());
             Assert.AreEqual("value", evLoad.CustomFields["MyCustomField"]);
-            Assert.AreEqual(null, ins[0].Target.New);
+            Assert.AreEqual(null, ins[0].Target.EventObject);
         }
 
         [Test]
@@ -163,12 +163,12 @@ namespace Audit.IntegrationTest
             Assert.AreEqual(1, results.Documents.Count);
             Assert.AreEqual(1, ins.Count);
             Assert.AreEqual(1, repl.Count);
-            Assert.AreEqual("init", evResult.Target.Old.ToString());
-            Assert.AreEqual("init", ins[0].Target.Old.ToString());
-            Assert.AreEqual(null, ins[0].Target.New);
-            Assert.AreEqual("init", repl[0].Target.Old.ToString());
-            Assert.AreEqual("init-end", repl[0].Target.New.ToString());
-            Assert.AreEqual("init-end", evResult.Target.New.ToString());
+            Assert.AreEqual("init", evResult.Target.EventObject.ToString());
+            Assert.AreEqual("init", ins[0].Target.EventObject.ToString());
+            Assert.AreEqual(null, ins[0].Target.EventObject);
+            Assert.AreEqual("init", repl[0].Target.EventObject.ToString());
+            Assert.AreEqual("init-end", repl[0].Target.EventObject.ToString());
+            Assert.AreEqual("init-end", evResult.Target.EventObject.ToString());
             Assert.AreEqual("value", evResult.CustomFields["MyCustomField"]?.ToString());
         }
 
@@ -210,12 +210,12 @@ namespace Audit.IntegrationTest
             Assert.AreEqual(1, results.Documents.Count);
             Assert.AreEqual(1, ins.Count);
             Assert.AreEqual(1, repl.Count);
-            Assert.AreEqual("init", evResult.Target.Old.ToString());
-            Assert.AreEqual("init", ins[0].Target.Old.ToString());
-            Assert.AreEqual(null, ins[0].Target.New);
-            Assert.AreEqual("init", repl[0].Target.Old.ToString());
-            Assert.AreEqual("init-end", repl[0].Target.New.ToString());
-            Assert.AreEqual("init-end", evResult.Target.New.ToString());
+            Assert.AreEqual("init", evResult.Target.EventObject.ToString());
+            Assert.AreEqual("init", ins[0].Target.EventObject.ToString());
+            Assert.AreEqual(null, ins[0].Target.EventObject);
+            Assert.AreEqual("init", repl[0].Target.EventObject.ToString());
+            Assert.AreEqual("init-end", repl[0].Target.EventObject.ToString());
+            Assert.AreEqual("init-end", evResult.Target.EventObject.ToString());
             Assert.AreEqual("value", evResult.CustomFields["MyCustomField"]?.ToString());
         }
 

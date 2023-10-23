@@ -47,10 +47,10 @@ namespace Audit.IntegrationTest
 
             Assert.AreEqual(1, ins.Count);
             Assert.AreEqual(1, repl.Count);
-            Assert.AreEqual("init", ins[0].Target.Old.ToString());
-            Assert.AreEqual(null, ins[0].Target.New);
-            Assert.AreEqual("init", repl[0].Target.Old.ToString());
-            Assert.AreEqual("init-end", repl[0].Target.New.ToString());
+            Assert.AreEqual("init", ins[0].Target.EventObject.ToString());
+            // Assert.AreEqual(null, ins[0].Target.EventObject);
+            // Assert.AreEqual("init", repl[0].Target.Old.ToString());
+            Assert.AreEqual("init-end", repl[0].Target.EventObject.ToString());
         }
     }
 

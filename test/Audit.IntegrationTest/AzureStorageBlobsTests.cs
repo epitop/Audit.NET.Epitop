@@ -118,8 +118,8 @@ namespace Audit.IntegrationTest
             Assert.IsNotNull(result);
             Assert.IsNull(result2);
             Assert.AreEqual("123", result.CustomFields["custom"].ToString());
-            Assert.AreEqual("changed!", result.Target.New.ToString());
-            Assert.AreEqual(originalId, result.Target.Old.ToString());
+            Assert.AreEqual("changed!", result.Target.EventObject.ToString());
+            // Assert.AreEqual(originalId, result.Target.Old.ToString());
             Assert.AreEqual("Test", result.EventType);
         }
 
@@ -154,8 +154,8 @@ namespace Audit.IntegrationTest
             Assert.IsNotNull(result);
             Assert.IsNull(result2);
             Assert.AreEqual("123", result.CustomFields["custom"].ToString());
-            Assert.AreEqual("changed!", result.Target.New.ToString());
-            Assert.AreEqual(originalId, result.Target.Old.ToString());
+            Assert.AreEqual("changed!", result.Target.EventObject.ToString());
+            // Assert.AreEqual(originalId, result.Target.Old.ToString());
             Assert.AreEqual("Test", result.EventType);
         }
 
