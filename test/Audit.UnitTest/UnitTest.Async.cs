@@ -2,10 +2,7 @@
 using System;
 using Moq;
 using Audit.Core.Providers;
-using Audit.EntityFramework;
 using System.Collections.Generic;
-using Audit.Core.Extensions;
-using System.Diagnostics;
 using NUnit.Framework;
 using System.Threading.Tasks;
 using System.IO;
@@ -216,7 +213,6 @@ namespace Audit.UnitTest
                  .EventType("event type")
                  .ExtraFields(new { f = 1 })
                  .CreationPolicy(EventCreationPolicy.Manual)
-                 .AuditEvent(new AuditEventEntityFramework())
                  .DataProvider(new DynamicDataProvider())
                  .IsCreateAndSave(true)
                  .SkipExtraFrames(1)
@@ -227,7 +223,6 @@ namespace Audit.UnitTest
             Assert.AreEqual("event type", scope.Event.EventType);
             Assert.IsTrue(scope.Event.CustomFields.ContainsKey("f"));
             Assert.AreEqual(EventCreationPolicy.Manual, scope.EventCreationPolicy);
-            Assert.AreEqual(typeof(AuditEventEntityFramework), scope.Event.GetType());
             Assert.AreEqual(typeof(DynamicDataProvider), scope.DataProvider.GetType());
             Assert.AreEqual(SaveMode.InsertOnStart, scope.SaveMode);
             Assert.AreEqual("1", scope.Event.Target.EventObject.ToString());
@@ -242,7 +237,6 @@ namespace Audit.UnitTest
                  .EventType("event type")
                  .ExtraFields(new { f = 1 })
                  .CreationPolicy(EventCreationPolicy.Manual)
-                 .AuditEvent(new AuditEventEntityFramework())
                  .DataProvider(new DynamicDataProvider())
                  .IsCreateAndSave(true)
                  .SkipExtraFrames(1)
@@ -253,7 +247,6 @@ namespace Audit.UnitTest
             Assert.AreEqual("event type", scope.Event.EventType);
             Assert.IsTrue(scope.Event.CustomFields.ContainsKey("f"));
             Assert.AreEqual(EventCreationPolicy.Manual, scope.EventCreationPolicy);
-            Assert.AreEqual(typeof(AuditEventEntityFramework), scope.Event.GetType());
             Assert.AreEqual(typeof(DynamicDataProvider), scope.DataProvider.GetType());
             Assert.AreEqual(SaveMode.InsertOnStart, scope.SaveMode);
             Assert.AreEqual("1", scope.Event.Target.EventObject.ToString());
@@ -848,20 +841,6 @@ namespace Audit.UnitTest
             Assert.NotNull(scope2.EventId);
             Assert.AreNotEqual(scope1.EventId, scope2.EventId);
             provider.Verify(p => p.InsertEventAsync(It.IsAny<AuditEvent>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        }
-
-        [AuditDbContext(AuditEventType = "FromAttr")]
-        public class MyContext : AuditDbContext
-        {
-            public override string AuditEventType { get { return base.AuditEventType; } }
-            public override bool IncludeEntityObjects { get { return base.IncludeEntityObjects; } }
-            public override AuditOptionMode Mode { get { return base.Mode; } }
-        }
-        public class AnotherContext : AuditDbContext
-        {
-            public override string AuditEventType { get { return base.AuditEventType; } }
-            public override bool IncludeEntityObjects { get { return base.IncludeEntityObjects; } }
-            public override AuditOptionMode Mode { get { return base.Mode; } }
         }
     }
 }

@@ -20,18 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Audit.FileSystem\Audit.FileSystem.csproj" />
-    <ProjectReference Include="..\..\src\Audit.HttpClient\Audit.HttpClient.csproj" />
-    <ProjectReference Include="..\..\src\Audit.NET.Kafka\Audit.NET.Kafka.csproj" />
-    <ProjectReference Include="..\..\src\Audit.NET.log4net\Audit.NET.log4net.csproj" />
-    <ProjectReference Include="..\..\src\Audit.NET.NLog\Audit.NET.NLog.csproj" />
-    <ProjectReference Include="..\..\src\Audit.NET.Serilog\Audit.NET.Serilog.csproj" />
     <ProjectReference Include="..\..\src\Audit.NET\Audit.NET.csproj" />
-    <ProjectReference Include="..\..\src\Audit.NET.Udp\Audit.NET.Udp.csproj" />
-    <ProjectReference Include="..\..\src\Audit.EntityFramework\Audit.EntityFramework.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netcoreapp1.0' ">
-    <ProjectReference Include="..\..\src\Audit.NET.ElasticSearch\Audit.NET.Elasticsearch.csproj" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' AND '$(TargetFramework)' != 'net6.0' AND '$(TargetFramework)' != 'net7.0' ">
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
@@ -40,7 +29,6 @@
 	<PackageReference Include="System.Text.Json" Version="5.0.2" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0' OR '$(TargetFramework)' == 'net6.0' OR '$(TargetFramework)' == 'net7.0' ">
-    <ProjectReference Include="..\..\src\Audit.NET.EventLog.Core\Audit.NET.EventLog.Core.csproj" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="5.0.2" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' != 'net5.0' AND '$(TargetFramework)' != 'net6.0' AND '$(TargetFramework)' != 'net7.0' ">

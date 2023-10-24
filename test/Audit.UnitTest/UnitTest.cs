@@ -2,17 +2,14 @@
 using System;
 using Moq;
 using Audit.Core.Providers;
-using Audit.EntityFramework;
 using System.Collections.Generic;
 using Audit.Core.Extensions;
 using NUnit.Framework;
 using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
-using Audit.EntityFramework.ConfigurationApi;
 using System.Reflection;
 #if NETCOREAPP3_0_OR_GREATER || NET20_OR_GREATER
-using System.Data.Entity.Infrastructure;
 #endif
 #if NK_JSON
 using Newtonsoft.Json;
@@ -229,7 +226,6 @@ namespace Audit.UnitTest
                  .EventType("event type")
                  .ExtraFields(new { f = 1 })
                  .CreationPolicy(EventCreationPolicy.Manual)
-                 .AuditEvent(new AuditEventEntityFramework())
                  .DataProvider(new DynamicDataProvider())
                  .IsCreateAndSave(true)
                  .SkipExtraFrames(1)
@@ -240,7 +236,6 @@ namespace Audit.UnitTest
             Assert.AreEqual("event type", scope.Event.EventType);
             Assert.IsTrue(scope.Event.CustomFields.ContainsKey("f"));
             Assert.AreEqual(EventCreationPolicy.Manual, scope.EventCreationPolicy);
-            Assert.AreEqual(typeof(AuditEventEntityFramework), scope.Event.GetType());
             Assert.AreEqual(typeof(DynamicDataProvider), scope.DataProvider.GetType());
             Assert.AreEqual(SaveMode.InsertOnStart, scope.SaveMode);
             Assert.AreEqual("1", scope.Event.Target.EventObject.ToString());
@@ -256,7 +251,6 @@ namespace Audit.UnitTest
                 .EventType("event type")
                 .ExtraFields(new { f = 1 })
                 .CreationPolicy(EventCreationPolicy.Manual)
-                .AuditEvent(new AuditEventEntityFramework())
                 .DataProvider(new DynamicDataProvider())
                 .IsCreateAndSave(true)
                 .SkipExtraFrames(1)
@@ -267,7 +261,6 @@ namespace Audit.UnitTest
             Assert.AreEqual("event type", scope.Event.EventType);
             Assert.IsTrue(scope.Event.CustomFields.ContainsKey("f"));
             Assert.AreEqual(EventCreationPolicy.Manual, scope.EventCreationPolicy);
-            Assert.AreEqual(typeof(AuditEventEntityFramework), scope.Event.GetType());
             Assert.AreEqual(typeof(DynamicDataProvider), scope.DataProvider.GetType());
             Assert.AreEqual(SaveMode.InsertOnStart, scope.SaveMode);
             Assert.AreEqual("1", scope.Event.Target.EventObject.ToString());
@@ -534,63 +527,6 @@ namespace Audit.UnitTest
             Audit.Core.Configuration.AuditDisabled = false;
             Assert.AreEqual(0, list.Count);
         }
-
-#if NETCOREAPP3_0_OR_GREATER || NET20_OR_GREATER
-        [Test]
-        public void Test_EF_MergeEntitySettings()
-        {
-            var now = DateTime.Now;
-            var helper = new DbContextHelper();
-            var attr = new Dictionary<Type, EfEntitySettings>();
-            var local = new Dictionary<Type, EfEntitySettings>();
-            var global = new Dictionary<Type, EfEntitySettings>();
-            attr[typeof(string)] = new EfEntitySettings()
-            {
-                IgnoredProperties = new HashSet<string>(new[] { "I1" }),
-                OverrideProperties = new Dictionary<string, Func<DbEntityEntry, object>>() { { "C1", _ => 1 }, { "C2", _ => "ATTR" } }
-            };
-            local[typeof(string)] = new EfEntitySettings()
-            {
-                IgnoredProperties = new HashSet<string>(new[] { "I1", "I2" }),
-                OverrideProperties = new Dictionary<string, Func<DbEntityEntry, object>>() { { "C2", _ => "LOCAL" }, { "C3", _ => now } } 
-            };
-            global[typeof(string)] = new EfEntitySettings()
-            {
-                IgnoredProperties = new HashSet<string>(new[] { "I3" }),
-                OverrideProperties = new Dictionary<string, Func<DbEntityEntry, object>>() { { "C2", _ => "GLOBAL" }, { "C4", _ => null } }
-            };
-
-            attr[typeof(int)] = new EfEntitySettings()
-            {
-                IgnoredProperties = new HashSet<string>(new[] { "I3" }),
-                OverrideProperties = new Dictionary<string, Func<DbEntityEntry, object>>() { { "C2", _ => "INT" }, { "C4", _ => null } }
-            };
-
-            var merged = helper.MergeEntitySettings(attr, local, global);
-            var mustbenull1 = helper.MergeEntitySettings(null, null, null);
-            var mustbenull2 = helper.MergeEntitySettings(null, new Dictionary<Type, EfEntitySettings>(), null);
-            var mustbenull3 = helper.MergeEntitySettings(new Dictionary<Type, EfEntitySettings>(), new Dictionary<Type, EfEntitySettings>(), new Dictionary<Type, EfEntitySettings>());
-            Assert.AreEqual(2, merged.Count);
-            Assert.IsNull(mustbenull1);
-            Assert.IsNull(mustbenull2);
-            Assert.IsNull(mustbenull3);
-            var merge = merged[typeof(string)];
-            Assert.AreEqual(3, merge.IgnoredProperties.Count);
-            Assert.IsTrue(merge.IgnoredProperties.Contains("I1"));
-            Assert.IsTrue(merge.IgnoredProperties.Contains("I2"));
-            Assert.IsTrue(merge.IgnoredProperties.Contains("I3"));
-            Assert.AreEqual(4, merge.OverrideProperties.Count);
-            Assert.AreEqual(1, merge.OverrideProperties["C1"].Invoke(null));
-            Assert.AreEqual("ATTR", merge.OverrideProperties["C2"].Invoke(null));
-            Assert.AreEqual(now, merge.OverrideProperties["C3"].Invoke(null));
-            Assert.AreEqual(null, merge.OverrideProperties["C4"].Invoke(null));
-            merge = merged[typeof(int)];
-            Assert.AreEqual(1, merge.IgnoredProperties.Count);
-            Assert.IsTrue(merge.IgnoredProperties.Contains("I3"));
-            Assert.AreEqual("INT", merge.OverrideProperties["C2"].Invoke(null));
-            Assert.AreEqual(null, merge.OverrideProperties["C4"].Invoke(null));
-        }
-#endif
         
         [Test]
         public void Test_FileLog_HappyPath()
@@ -840,29 +776,7 @@ namespace Audit.UnitTest
             Assert.AreEqual("AnonymousType<Boolean,String,Int32,AnonymousType<Boolean,String>>", anon1);
             Assert.AreEqual("AnonymousType<System.Boolean,System.String,System.Int32,AnonymousType<System.Boolean,System.String>>", anon2);
         }
-
-        [Test]
-        public void Test_EntityFramework_Config_Precedence()
-        {
-            EntityFramework.Configuration.Setup()
-                .ForContext<MyContext>(x => x.AuditEventType("ForContext"))
-                .UseOptIn();
-            EntityFramework.Configuration.Setup()
-                .ForAnyContext(x => x.AuditEventType("ForAnyContext").IncludeEntityObjects(true).ExcludeValidationResults(true))
-                .UseOptOut();
-
-            var ctx = new MyContext();
-            var ctx2 = new AnotherContext();
-
-            Assert.AreEqual("FromAttr", ctx.AuditEventType);
-            Assert.AreEqual(true, ctx.IncludeEntityObjects);
-            Assert.AreEqual(true, ctx.ExcludeValidationResults);
-            Assert.AreEqual(AuditOptionMode.OptIn, ctx.Mode);
-
-            Assert.AreEqual("ForAnyContext", ctx2.AuditEventType);
-            Assert.AreEqual(AuditOptionMode.OptOut, ctx2.Mode);
-        }
-
+        
         [Test]
         public void Test_FluentConfig_FileLog()
         {
@@ -880,22 +794,7 @@ namespace Audit.UnitTest
             Assert.True(Core.Configuration.AuditScopeActions.ContainsKey(ActionType.OnScopeCreated));
             Assert.AreEqual(1, x);
         }
-#if NET461 || NETCOREAPP2_0 || NET5_0_OR_GREATER
-        [Test]
-        public void Test_FluentConfig_EventLog()
-        {
-            Core.Configuration.Setup()
-                .UseEventLogProvider(config => config.LogName("LogName").SourcePath("SourcePath").MachineName("MachineName"))
-                .WithCreationPolicy(EventCreationPolicy.Manual);
-            var scope = new AuditScopeFactory().Create("test", null);
-            scope.Dispose();
-            Assert.AreEqual(typeof(EventLogDataProvider), Core.Configuration.DataProvider.GetType());
-            Assert.AreEqual("LogName", (Core.Configuration.DataProvider as EventLogDataProvider).LogName);
-            Assert.AreEqual("SourcePath", (Core.Configuration.DataProvider as EventLogDataProvider).SourcePath);
-            Assert.AreEqual("MachineName", (Core.Configuration.DataProvider as EventLogDataProvider).MachineName);
-            Assert.AreEqual(EventCreationPolicy.Manual, Core.Configuration.CreationPolicy);
-        }
-#endif
+
         [Test]
         public void Test_StartAndSave()
         {
@@ -1189,20 +1088,7 @@ namespace Audit.UnitTest
             Assert.AreNotEqual(scope1.EventId, scope2.EventId);
             provider.Verify(p => p.InsertEvent(It.IsAny<AuditEvent>()), Times.Exactly(2));
         }
-
-        [AuditDbContext(AuditEventType = "FromAttr")]
-        public class MyContext : AuditDbContext
-        {
-            public override string AuditEventType { get { return base.AuditEventType; } }
-            public override bool IncludeEntityObjects { get { return base.IncludeEntityObjects; } }
-            public override AuditOptionMode Mode { get { return base.Mode; } }
-        }
-        public class AnotherContext : AuditDbContext
-        {
-            public override string AuditEventType { get { return base.AuditEventType; } }
-            public override bool IncludeEntityObjects { get { return base.IncludeEntityObjects; } }
-            public override AuditOptionMode Mode { get { return base.Mode; } }
-        }
+        
         public class SomeClass
         {
             public int Id { get; set; }
