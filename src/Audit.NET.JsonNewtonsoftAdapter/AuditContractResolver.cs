@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Audit.Core.Epitop;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -23,17 +24,23 @@ namespace Audit.JsonNewtonsoftAdapter
             // Ignore properties marked with JsonExtensionData or JsonIgnore(Condition=Always) attributes (from System.Text.Json)
             properties = properties
                 .Where(p => !p.AttributeProvider!.GetAttributes(true)
-                    .Any(t => t switch
-                    {
-                        System.Text.Json.Serialization.JsonExtensionDataAttribute => true,
-                        System.Text.Json.Serialization.JsonIgnoreAttribute jsonIgnoreAttr => jsonIgnoreAttr.Condition == JsonIgnoreCondition.Always,
-                        _ => false
-                    }))
+                    .Any(GetPropertyExclusionFilter))
                 .ToList();
 
             return properties;
         }
-        
+
+        private static bool GetPropertyExclusionFilter(Attribute t)
+        {
+            return t switch
+            {
+                System.Text.Json.Serialization.JsonExtensionDataAttribute => true,
+                System.Text.Json.Serialization.JsonIgnoreAttribute jsonIgnoreAttr => jsonIgnoreAttr.Condition == JsonIgnoreCondition.Always,
+                AuditIgnoreAttribute => true,
+                _ => false
+            };
+        }
+
         protected override JsonObjectContract CreateObjectContract(Type objectType)
         {
             var contract = base.CreateObjectContract(objectType);
